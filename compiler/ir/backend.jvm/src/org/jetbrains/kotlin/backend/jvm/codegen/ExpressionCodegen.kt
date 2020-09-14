@@ -1163,9 +1163,14 @@ class ExpressionCodegen(
         element: IrFunctionAccessExpression, data: BlockInfo, signature: JvmMethodSignature
     ): IrCallGenerator {
         if (!element.symbol.owner.isInlineFunctionCall(context) ||
-            classCodegen.irClass.fileParent.fileEntry is MultifileFacadeFileEntry
+            classCodegen.irClass.fileParent.fileEntry is MultifileFacadeFileEntry ||
+            irFunction.isInvokeSuspendOfContinuation()
         ) {
             return IrCallGenerator.DefaultCallGenerator
+        }
+
+        if (irFunction == context.mapping.defaultArgumentsDispatchFunction[element.symbol.owner]) {
+            return IrInlineDefaultCodegen
         }
 
         val callee = element.symbol.owner

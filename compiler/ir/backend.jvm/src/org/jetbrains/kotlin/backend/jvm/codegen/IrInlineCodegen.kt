@@ -5,10 +5,10 @@
 
 package org.jetbrains.kotlin.backend.jvm.codegen
 
-import org.jetbrains.kotlin.codegen.*
 import org.jetbrains.kotlin.backend.jvm.JvmBackendContext
 import org.jetbrains.kotlin.backend.jvm.ir.isInlineParameter
 import org.jetbrains.kotlin.backend.jvm.lower.suspendFunctionOriginal
+import org.jetbrains.kotlin.codegen.*
 import org.jetbrains.kotlin.codegen.inline.*
 import org.jetbrains.kotlin.codegen.state.GenerationState
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
@@ -17,7 +17,9 @@ import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.descriptors.toIrBasedDescriptor
 import org.jetbrains.kotlin.ir.descriptors.toIrBasedKotlinType
 import org.jetbrains.kotlin.ir.expressions.*
-import org.jetbrains.kotlin.ir.types.*
+import org.jetbrains.kotlin.ir.types.IrType
+import org.jetbrains.kotlin.ir.types.classOrNull
+import org.jetbrains.kotlin.ir.types.classifierOrFail
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.resolve.jvm.AsmTypes
 import org.jetbrains.kotlin.resolve.jvm.jvmSignature.JvmMethodSignature
@@ -70,14 +72,6 @@ class IrInlineCodegen(
         codegen: ExpressionCodegen,
         blockInfo: BlockInfo
     ) {
-        if (codegen.irFunction.isInvokeSuspendOfContinuation()) {
-            // In order to support java interop of inline suspend functions, we generate continuations for these inline suspend functions.
-            // These functions should behave as ordinary suspend functions, i.e. we should not inline the content of the inline function
-            // into continuation.
-            // Thus, we should put its arguments to stack.
-            super.genValueAndPut(irValueParameter, argumentExpression, parameterType, codegen, blockInfo)
-        }
-
         val isInlineParameter = irValueParameter.isInlineParameter()
         if (isInlineParameter && isInlineIrExpression(argumentExpression)) {
             val irReference: IrFunctionReference =
@@ -162,7 +156,6 @@ class IrInlineCodegen(
                 false,
                 codegen.typeMapper.typeSystem,
                 registerLineNumberAfterwards = false,
-                isCallOfFunctionInCorrespondingDefaultDispatch = codegen.irFunction == codegen.context.mapping.defaultArgumentsDispatchFunction[function]
             )
         } finally {
             state.globalInlineContext.exitFromInlining()
