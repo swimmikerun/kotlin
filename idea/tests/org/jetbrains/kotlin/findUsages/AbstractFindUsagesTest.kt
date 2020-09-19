@@ -14,6 +14,8 @@ import com.intellij.find.findUsages.JavaFindUsagesHandlerFactory
 import com.intellij.find.impl.FindManagerImpl
 import com.intellij.lang.properties.psi.PropertiesFile
 import com.intellij.lang.properties.psi.Property
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.openapi.extensions.Extensions
 import com.intellij.openapi.progress.ProgressIndicator
@@ -60,6 +62,17 @@ import java.io.File
 import java.util.*
 import kotlin.collections.LinkedHashSet
 
+fun <R> executeOnPooledThreadInReadAction(action: () -> R): R =
+    ApplicationManager.getApplication().executeOnPooledThread<R> { runReadAction(action) }.get()
+
+abstract class AbstractFindUsagesWithDisableComponentSearchFirTest : AbstractFindUsagesWithDisableComponentSearchTest() {
+    override fun isFirPlugin(): Boolean = true
+}
+
+abstract class AbstractFindUsagesFirTest : AbstractFindUsagesTest() {
+    override fun isFirPlugin(): Boolean = true
+}
+
 abstract class AbstractFindUsagesWithDisableComponentSearchTest : AbstractFindUsagesTest() {
 
     override fun <T : PsiElement> doTest(path: String) {
@@ -86,6 +99,9 @@ abstract class AbstractFindUsagesTest : KotlinLightCodeInsightFixtureTestCase() 
     protected open val prefixForResults = ""
 
     protected open fun <T : PsiElement> doTest(path: String) {
+
+        //if (isFirPlugin) return //UNCOMMENT IT TO RUN FIR TESTS
+
         val mainFile = File(path)
         val mainFileName = mainFile.name
         val mainFileText = FileUtil.loadFile(mainFile, true)
@@ -139,17 +155,23 @@ abstract class AbstractFindUsagesTest : KotlinLightCodeInsightFixtureTestCase() 
                 ScriptConfigurationManager.updateScriptDependenciesSynchronously(myFixture.file)
             }
 
-            (myFixture.file as? KtFile)?.let { ktFile ->
-                val diagnosticsProvider: (KtFile) -> Diagnostics = { it.analyzeWithAllCompilerChecks().bindingContext.diagnostics }
-                DirectiveBasedActionUtils.checkForUnexpectedWarnings(ktFile, diagnosticsProvider)
-                DirectiveBasedActionUtils.checkForUnexpectedErrors(ktFile, diagnosticsProvider)
+            if (!isFirPlugin) {
+                (myFixture.file as? KtFile)?.let { ktFile ->
+                    val diagnosticsProvider: (KtFile) -> Diagnostics = { it.analyzeWithAllCompilerChecks().bindingContext.diagnostics }
+                    DirectiveBasedActionUtils.checkForUnexpectedWarnings(ktFile, diagnosticsProvider)
+                    DirectiveBasedActionUtils.checkForUnexpectedErrors(ktFile, diagnosticsProvider)
+                }
             }
 
             val caretElement = when {
-                InTextDirectivesUtils.isDirectiveDefined(mainFileText, "// FIND_BY_REF") -> TargetElementUtil.findTargetElement(
-                    myFixture.editor,
-                    TargetElementUtil.REFERENCED_ELEMENT_ACCEPTED or TargetElementUtil.getInstance().referenceSearchFlags
-                )!!
+                InTextDirectivesUtils.isDirectiveDefined(mainFileText, "// FIND_BY_REF") -> {
+                    executeOnPooledThreadInReadAction {
+                        TargetElementUtil.findTargetElement(
+                            myFixture.editor,
+                            TargetElementUtil.REFERENCED_ELEMENT_ACCEPTED or TargetElementUtil.getInstance().referenceSearchFlags
+                        )!!
+                    }
+                }
 
                 isFindFileUsages -> myFixture.file
 
@@ -273,7 +295,10 @@ internal fun <T : PsiElement> findUsagesAndCheckResults(
             groupAsString = "($groupAsString) "
         }
 
-        val usageType = AbstractFindUsagesTest.getUsageType(usageAdapter.element)
+        val usageType = executeOnPooledThreadInReadAction {
+            AbstractFindUsagesTest.getUsageType(usageAdapter.element)
+        }
+
         val usageTypeAsString = usageType?.toString(AbstractFindUsagesTest.USAGE_VIEW_PRESENTATION) ?: "null"
 
         val usageChunks = ArrayList<TextChunk>()
