@@ -15,6 +15,7 @@ import org.jetbrains.kotlin.backend.jvm.lower.constantValue
 import org.jetbrains.kotlin.backend.jvm.lower.inlineclasses.unboxInlineClass
 import org.jetbrains.kotlin.codegen.*
 import org.jetbrains.kotlin.codegen.AsmUtil.*
+import org.jetbrains.kotlin.codegen.DescriptorAsmUtil.*
 import org.jetbrains.kotlin.codegen.coroutines.SuspensionPointKind
 import org.jetbrains.kotlin.codegen.inline.*
 import org.jetbrains.kotlin.codegen.inline.ReifiedTypeInliner.Companion.putNeedClassReificationMarker

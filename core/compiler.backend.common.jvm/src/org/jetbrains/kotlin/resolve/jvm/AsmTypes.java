@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2018 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -10,10 +10,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.kotlin.builtins.PrimitiveType;
 import org.jetbrains.org.objectweb.asm.Type;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
 public class AsmTypes {
-    private static final Map<Class<?>, Type> TYPES_MAP = new HashMap<>();
+    private static final Map<Class<?>, Type> TYPES_MAP = new HashMap<Class<?>, Type>();
 
     public static final Type OBJECT_TYPE = getType(Object.class);
     public static final Type JAVA_STRING_TYPE = getType(String.class);
@@ -126,8 +130,13 @@ public class AsmTypes {
     }
 
     @NotNull
-    public static Type getType(@NotNull Class<?> javaClass) {
-        return TYPES_MAP.computeIfAbsent(javaClass, k -> Type.getType(javaClass));
+    public static Type getType(final @NotNull Class<?> javaClass) {
+        return TYPES_MAP.computeIfAbsent(javaClass, new Function<Class<?>, Type>() {
+            @Override
+            public Type apply(Class<?> k) {
+                return Type.getType(javaClass);
+            }
+        });
     }
 
     public static final List<Type> OPTIMIZED_PROPERTY_REFERENCE_SUPERTYPES =
