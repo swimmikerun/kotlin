@@ -172,16 +172,12 @@ private class ClassClsStubBuilder(
         }
     }
 
-    /**
-     * See [org.jetbrains.kotlin.resolve.MemberComparator] for the order of the declarations.
-     */
     private fun createClassBodyAndMemberStubs() {
         val classBody = KotlinPlaceHolderStubImpl<KtClassBody>(classOrObjectStub, KtStubElementTypes.CLASS_BODY)
         createEnumEntryStubs(classBody)
         createCompanionObjectStub(classBody)
         createCallableMemberStubs(classBody)
         createInnerAndNestedClasses(classBody)
-        createTypeAliasesStubs(classBody)
     }
 
     private fun createCompanionObjectStub(classBody: KotlinPlaceHolderStubImpl<KtClassBody>) {
@@ -224,9 +220,6 @@ private class ClassClsStubBuilder(
         }
 
         createDeclarationsStubs(classBody, c, thisAsProtoContainer, classProto.functionList, classProto.propertyList)
-    }
-
-    private fun createTypeAliasesStubs(classBody: KotlinPlaceHolderStubImpl<KtClassBody>) {
         createTypeAliasesStub(classBody, c, thisAsProtoContainer, classProto.typeAliasList)
     }
 
