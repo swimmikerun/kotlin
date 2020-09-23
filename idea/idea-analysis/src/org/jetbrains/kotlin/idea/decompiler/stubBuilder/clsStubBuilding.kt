@@ -50,7 +50,7 @@ fun createPackageFacadeStub(
 ): KotlinFileStubImpl {
     val fileStub = KotlinFileStubForIde.forFile(packageFqName, isScript = false)
     setupFileStub(fileStub, packageFqName)
-    createPackageDeclarationsStubs(
+    createDeclarationsStubs(
         fileStub, c, ProtoContainer.Package(packageFqName, c.nameResolver, c.typeTable, source = null), packageProto
     )
     return fileStub
@@ -68,7 +68,7 @@ fun createFileFacadeStub(
         packageFqName, c.nameResolver, c.typeTable,
         JvmPackagePartSource(JvmClassName.byClassId(ClassId.topLevel(facadeFqName)), null, packageProto, c.nameResolver)
     )
-    createPackageDeclarationsStubs(fileStub, c, container, packageProto)
+    createDeclarationsStubs(fileStub, c, container, packageProto)
     return fileStub
 }
 
@@ -90,7 +90,7 @@ fun createMultifileClassStub(
             packageFqName, partContext.nameResolver, partContext.typeTable,
             JvmPackagePartSource(partFile, packageProto, nameResolver)
         )
-        createPackageDeclarationsStubs(fileStub, partContext, container, packageProto)
+        createDeclarationsStubs(fileStub, partContext, container, packageProto)
     }
     return fileStub
 }
