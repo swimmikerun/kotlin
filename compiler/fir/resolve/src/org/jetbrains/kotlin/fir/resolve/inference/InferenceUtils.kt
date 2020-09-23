@@ -11,6 +11,7 @@ import org.jetbrains.kotlin.fir.declarations.FirAnonymousFunction
 import org.jetbrains.kotlin.fir.resolve.BodyResolveComponents
 import org.jetbrains.kotlin.fir.resolve.calls.Candidate
 import org.jetbrains.kotlin.fir.resolve.fullyExpandedType
+import org.jetbrains.kotlin.fir.symbols.StandardClassIds
 import org.jetbrains.kotlin.fir.types.*
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
@@ -43,6 +44,10 @@ fun ConeKotlinType.isKFunctionType(session: FirSession): Boolean {
     val kind = functionClassKind(session) ?: return false
     return kind == FunctionClassKind.KFunction ||
             kind == FunctionClassKind.KSuspendFunction
+}
+
+fun ConeKotlinType.isKClassType(): Boolean {
+    return classId == StandardClassIds.KClass
 }
 
 fun ConeKotlinType.receiverType(expectedTypeRef: FirTypeRef?, session: FirSession): ConeKotlinType? {
